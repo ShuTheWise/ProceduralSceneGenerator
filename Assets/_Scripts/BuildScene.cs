@@ -240,7 +240,7 @@ namespace ProceduralSceneGenerator
             brzegi.Add(brzegowe[2], Quaternion.Euler(Vector3.up * -90));
             brzegi.Add(brzegowe[3], Quaternion.Euler(Vector3.up * 180));
 
-
+            List<Vector2> crossRoadsPositions = new List<Vector2>();
             ///Końcowa pętla wstawiająca (prawie) wszystkie obiekty
             for (int h = 0; h < mapHeight; h++)
             {
@@ -259,6 +259,15 @@ namespace ProceduralSceneGenerator
                     {
                         var cr = Instantiate(croosRoads, pos, croosRoads.transform.rotation, streetsRend) as GameObject;
                         cr.transform.localScale = Vector3.one * (buildingFootprint / 30);
+                        //crossRoadsPositions.Add(new Vector2(pos.x, pos.z));
+
+                        //Create cameras above cross roads
+                        GameObject cam = new GameObject("Camera" + w + h);
+                        cam.AddComponent<Camera>();
+                        cam.AddComponent<SphereCollider>();
+                        cam.GetComponent<SphereCollider>().radius = 0.3f;
+                        cam.GetComponent<Camera>().fieldOfView = 30;
+                        //cam.transform
                     }
                     else if (result < -1)
                     {
@@ -356,7 +365,7 @@ namespace ProceduralSceneGenerator
                 cam.GetComponent<SphereCollider>().radius = 0.3f;
                 cam.GetComponent<Camera>().fieldOfView = 30;
                 //Instantiate(cam, new Vector3(vec.w, camheight, vec.h), Quaternion.identity);
-                cam.transform.position = new Vector3(vec.w * buildingFootprint, camheight, vec.h * buildingFootprint);
+                cam.transform.position = new Vector3((float)vec.w * buildingFootprint, camheight,(float) vec.h * buildingFootprint);
                 cam.transform.LookAt(renderer);
                 cam.transform.parent = camRend;
 
@@ -414,7 +423,6 @@ namespace ProceduralSceneGenerator
         {
             AssetDatabase.CreateAsset(gameObj, "Assets/Resources/");
         }
-
         public static void Quit()
         {
 #if UNITY_EDITOR
