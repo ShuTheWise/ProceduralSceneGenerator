@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2015
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Procedural Scene Generator.CSharp", "Procedural Scene Generator.CSharp.csproj", "{91392B60-3F77-5BF3-5EE8-5AE4B6A3FF8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Procedural Scene Generator.CSharp.Editor", "Procedural Scene Generator.CSharp.Editor.csproj", "{8241FCCA-ACA2-BF51-CECF-059A006E767F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{91392B60-3F77-5BF3-5EE8-5AE4B6A3FF8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91392B60-3F77-5BF3-5EE8-5AE4B6A3FF8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91392B60-3F77-5BF3-5EE8-5AE4B6A3FF8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91392B60-3F77-5BF3-5EE8-5AE4B6A3FF8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8241FCCA-ACA2-BF51-CECF-059A006E767F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8241FCCA-ACA2-BF51-CECF-059A006E767F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8241FCCA-ACA2-BF51-CECF-059A006E767F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8241FCCA-ACA2-BF51-CECF-059A006E767F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
