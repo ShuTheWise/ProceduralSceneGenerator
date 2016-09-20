@@ -13,14 +13,15 @@ public class CamerasController : MonoBehaviour
 
     void Start()
     {
-        Camera[] camComponents = FindObjectsOfType<Camera>();
+      /*  Camera[] camComponents = FindObjectsOfType<Camera>();
         foreach (Camera cam in camComponents)
         {
             _cameras.Add(cam.gameObject);
         }
         _cameras.Remove(GameObject.FindGameObjectWithTag("MainCamera"));
         _cameras.Insert(0, GameObject.FindGameObjectWithTag("MainCamera"));
-        ActiveCamera();
+        
+        ActiveCamera();*/
     }
 
 	void Update ()
