@@ -14,16 +14,41 @@ namespace ProceduralSceneGenerator
         public GameObject croosRoads;
         public GameObject citySquareTile;
         public GameObject grassTile;
+        public GameObject grassTileWithoutTrees;
         private BuildingTemplateMaterials btm;
         private GameObject scenePrefab;
 
         public int mapSize = 10;
-        public int citySquareSize = 6;
+        private int citySquareSize = 4;
         private int mapWidth;
         private int mapHeight;
         float buildingFootprint = 4.15F;
         float[,] mapgrid;
 
+        void SetCitySquareSize()
+        {
+            if (mapSize < 4)
+            {
+                throw new System.Exception("Scene too small");
+            }
+            else if (mapSize < 4)
+            {
+                citySquareSize = 2;
+            }
+            else if (mapSize < 8)
+            {
+                citySquareSize = 2;
+            }
+            else if (mapSize < 12)
+            {
+                citySquareSize = 4;
+            }
+            else if (mapSize < 21)
+            {
+                citySquareSize = 6;
+            }
+            else throw new System.Exception("Scene too big");
+        }
 
         private struct Vec2Int
         {
@@ -38,32 +63,12 @@ namespace ProceduralSceneGenerator
             {
                 return "Wektor 2 Int: (" + w + "," + h + ")";
             }
-
-        }
-
-        private struct Vec2IntRot
-        {
-            public int h;
-            public int w;
-            public Quaternion rotation;
-            public Vec2IntRot(int width, int height, Quaternion rot)
-            {
-                h = height;
-                w = width;
-                rotation = rot;
-            }
-            public override string ToString()
-            {
-                return "Wektor 2 Int: (" + w + "," + h + ")";
-            }
-
         }
         void Start()
         {
             if (GameObject.Find("Renderer") == null)
             {
                 GameObject rendPar = new GameObject("Renderer");
-
                 new GameObject("Buildings Renderer");
                 new GameObject("Streets Renderer");
                 new GameObject("Miscellaneous Renderer");
@@ -74,6 +79,7 @@ namespace ProceduralSceneGenerator
             cityTiles = new List<GameObject>();
             mapHeight = mapSize;
             mapWidth = mapSize;
+            SetCitySquareSize();
 
             grassTile.transform.localScale = new Vector3(buildingFootprint, 0.1f, buildingFootprint);
             citySquareTile.transform.localScale = new Vector3(buildingFootprint, 0.1f, buildingFootprint);
@@ -81,7 +87,7 @@ namespace ProceduralSceneGenerator
             int start = center - citySquareSize / 2;
             int end = center + (center - start);
             float seed = Random.Range(0, 10);
-            mapgrid = new float[mapWidth, mapHeight];
+            mapgrid = new float[mapSize, mapSize];
 
             //generate map data
             for (int h = 0; h < mapHeight; h++)
@@ -100,38 +106,59 @@ namespace ProceduralSceneGenerator
                     mapgrid[w, h] = -4;
                 }
             }
-            //build streets 
-            int x = 0;
-            for (int i = 0; i < 2; i++)
+            ///build streets 
+            //x streets     
+            int x1 = Random.Range(0, start);
+            for (int h = 0; h < mapHeight; h++)
             {
-                x = Random.Range(0, start);
-                if (i > 0)
-                {
-                    x = Random.Range(end, mapHeight);
-                }
-                for (int h = 0; h < mapHeight; h++)
-                {
-                    mapgrid[x, h] = -1;
-                }
+                mapgrid[x1, h] = -1;
             }
 
-            int z = 0;
-            for (int i = 0; i < 2; i++)
+            int x2 = Random.Range(end, mapHeight);
+            for (int h = 0; h < mapHeight; h++)
             {
-                z = Random.Range(0, start);
-                if (i > 0)
-                {
-                    z = Random.Range(end, mapHeight);
-                }
-                for (int w = 0; w < mapWidth; w++)
-                {
-                    if (mapgrid[w, z] == -1)
-                        mapgrid[w, z] = -3;
-                    else
-                        mapgrid[w, z] = -2;
-                }
-                z = Random.Range(end, mapHeight);
+                mapgrid[x2, h] = -1;
             }
+
+            //z streets
+            int z1 = Random.Range(0, start);
+            for (int w = 0; w < mapWidth; w++)
+            {
+                if (mapgrid[w, z1] == -1)
+                    mapgrid[w, z1] = -3;
+                else
+                    mapgrid[w, z1] = -2;
+            }
+
+            int z2 = Random.Range(end, mapHeight);
+            for (int w = 0; w < mapWidth; w++)
+            {
+                if (mapgrid[w, z2] == -1)
+                    mapgrid[w, z2] = -3;
+                else
+                    mapgrid[w, z2] = -2;
+            }
+
+            //Ensures cameras will be set right
+            List<Vec2Int> grassWithoutTreesLocations = new List<Vec2Int>();
+            if (x1 != 0 && z1 != 0)
+            {
+                grassWithoutTreesLocations.Add(new Vec2Int(x1 - 1, z1 - 1));
+            }
+            if (x1 != 0 && z2 != mapWidth - 1)
+            {
+                grassWithoutTreesLocations.Add(new Vec2Int(x1 - 1, z2 + 1));
+            }
+            if (x2 != mapHeight - 1 && z1 != 0)
+            {
+                grassWithoutTreesLocations.Add(new Vec2Int(x2 + 1, z1 - 1));
+            }
+
+            if (x2 != mapHeight - 1 && z2 != mapWidth - 1)
+            {
+                grassWithoutTreesLocations.Add(new Vec2Int(x2 + 1, z2 + 1));
+            }
+
             //buildings
             CreateBuildings();
             Transform renderer = GameObject.Find("Renderer").transform;
@@ -145,14 +172,10 @@ namespace ProceduralSceneGenerator
             greenAreasRend.parent = renderer;
             Transform camRend = GameObject.Find("Cameras Renderer").transform;
             camRend.parent = renderer;
-            // float scale = 3;
+
             float posy = -citySquareTile.transform.lossyScale.y / 2;
             float move = -(mapSize / 2 * buildingFootprint) + buildingFootprint / 2;
-
             renderer.position = new Vector3(-move, +citySquareTile.transform.lossyScale.y / 2, -move);
-
-
-
 
             //znajdowanie skrzyżowań przy rynku
             List<Vec2Int> points = new List<Vec2Int>();
@@ -164,10 +187,10 @@ namespace ProceduralSceneGenerator
                     {
                         Vec2Int vec2 = new Vec2Int(w, h);
                         points.Add(vec2);
-                        //Debug.Log(vec2.ToString());
                     }
                 }
             }
+
             ///Obracanie budynków wewnątrz rynku
             // Tworzenie listy heightów na których znajdują się te budynki
             List<int> hses = new List<int>();
@@ -223,34 +246,47 @@ namespace ProceduralSceneGenerator
                 }
             }
 
-
+            //Replaces the tiles which might be coliding with cameras
+            foreach (Vec2Int vec in grassWithoutTreesLocations)
+            {
+                mapgrid[vec.w, vec.h] = -5;
+            }
 
             int squareStart = center - citySquareSize / 2;
             int squareEnd = center + (citySquareSize / 2) - 1;
 
+
+            //Brzegi rynku
             List<Vec2Int> brzegowe = new List<Vec2Int>();
-            Dictionary<Vec2Int, Quaternion> brzegi = new Dictionary<Vec2Int, Quaternion>();
 
             brzegowe.Add(new Vec2Int(squareStart, squareStart));
             brzegowe.Add(new Vec2Int(squareStart, squareEnd));
             brzegowe.Add(new Vec2Int(squareEnd, squareEnd));
             brzegowe.Add(new Vec2Int(squareEnd, squareStart));
 
-            brzegi.Add(brzegowe[0], Quaternion.identity);
-            brzegi.Add(brzegowe[1], Quaternion.Euler(Vector3.up * 90));
-            brzegi.Add(brzegowe[2], Quaternion.Euler(Vector3.up * -90));
-            brzegi.Add(brzegowe[3], Quaternion.Euler(Vector3.up * 180));
+            //Offset kamer przy skrzyżowaniach
+            float ofs = 3f;
+            float camHeight0 = 2f;
+            Vector3[] cameraOffset = new Vector3[4];
+            cameraOffset[0] = new Vector3(-ofs, camHeight0, -ofs);
+            cameraOffset[1] = new Vector3(ofs, camHeight0, -ofs);
+            cameraOffset[2] = new Vector3(-ofs, camHeight0, ofs);
+            cameraOffset[3] = new Vector3(ofs, camHeight0, ofs);
 
-            List<Vector2> crossRoadsPositions = new List<Vector2>();
-            ///Końcowa pętla wstawiająca (prawie) wszystkie obiekty
+            ///Końcowa pętla wstawiająca (prawie) wszystkie obiekty            
+            int k = 0;
             for (int h = 0; h < mapHeight; h++)
             {
                 for (int w = 0; w < mapWidth; w++)
                 {
                     float result = mapgrid[w, h];
                     Vector3 pos = new Vector3(w * buildingFootprint, 0, h * buildingFootprint);
+                    if (result < -4)
+                    {
+                        GameObject grassWt = Instantiate(grassTileWithoutTrees, pos, grassTileWithoutTrees.transform.rotation, greenAreasRend) as GameObject;
 
-                    if (result < -3)
+                    }
+                    else if (result < -3)
                     {
                         GameObject cst = Instantiate(citySquareTile, pos, citySquareTile.transform.rotation, streetsRend) as GameObject;
                         cst.transform.localScale = new Vector3(buildingFootprint, 0.1f, buildingFootprint);
@@ -260,7 +296,6 @@ namespace ProceduralSceneGenerator
                     {
                         var cr = Instantiate(croosRoads, pos, croosRoads.transform.rotation, streetsRend) as GameObject;
                         cr.transform.localScale = Vector3.one * (buildingFootprint / 30);
-                        //crossRoadsPositions.Add(new Vector2(pos.x, pos.z));
 
                         //Create cameras above cross roads
                         GameObject cam = new GameObject("Camera" + w + h);
@@ -268,7 +303,12 @@ namespace ProceduralSceneGenerator
                         cam.AddComponent<SphereCollider>();
                         cam.GetComponent<SphereCollider>().radius = 0.3f;
                         cam.GetComponent<Camera>().fieldOfView = 30;
-                        //cam.transform
+                        cam.transform.position = pos + cameraOffset[k];
+                        cam.transform.LookAt(renderer.position);
+                        cam.transform.parent = camRend;
+
+                        GameObject.Find("LookAt").GetComponent<CamerasController>()._cameras.Add(cam);
+                        k++;
                     }
                     else if (result < -1)
                     {
@@ -313,7 +353,6 @@ namespace ProceduralSceneGenerator
                     }
                 }
             }
-
             //Instantiate benches and lamp posts
             GameObject bench = btm.bench;
             GameObject lamppost = btm.lamppost;
@@ -366,7 +405,7 @@ namespace ProceduralSceneGenerator
                 cam.GetComponent<SphereCollider>().radius = 0.3f;
                 cam.GetComponent<Camera>().fieldOfView = 30;
                 //Instantiate(cam, new Vector3(vec.w, camheight, vec.h), Quaternion.identity);
-                cam.transform.position = new Vector3((float)vec.w * buildingFootprint, camheight,(float) vec.h * buildingFootprint);
+                cam.transform.position = new Vector3((float)vec.w * buildingFootprint, camheight, (float)vec.h * buildingFootprint);
                 cam.transform.LookAt(renderer);
                 cam.transform.parent = camRend;
 
@@ -378,23 +417,14 @@ namespace ProceduralSceneGenerator
                 child.localScale = Vector3.one * 3;
             }
             renderer.position = Vector3.zero;
-            
-            /*
-            float posy = -citySquareTile.transform.lossyScale.y / 2;
-            float move = -(mapSize / 2 * buildingFootprint) + buildingFootprint / 2;
-            
-            renderer.position = new Vector3(move * scale, -citySquareTile.transform.lossyScale.y / 2, move * scale);
-            */
-            //SaveScene(renderer.gameObject);
-            // AssetDatabase.CreateAsset(renderer.gameObject, "Assets/Resources/scene.prefab");
+
             scenePrefab = renderer.gameObject;
             SaveScenePrefab();
 
-            //string rendererPrefabName = "ScenePrefab" + renderer.GetInstanceID();
-            //PrefabUtility.CreatePrefab("Assets/Resources/" + rendererPrefabName + ".prefab", renderer.gameObject);
-            //Quit();
-            //   PrefabUtility.InstantiatePrefab(rendererPrefabName);
-
+            /*
+            string rendererPrefabName = "ScenePrefab" + renderer.GetInstanceID();
+            PrefabUtility.CreatePrefab("Assets/Resources/" + rendererPrefabName + ".prefab", renderer.gameObject);
+            Quit();*/
         }
         /// <summary>
         /// Funkcja wykorzystująca klasę *CreateBuilding* do generacji prefabów
@@ -402,13 +432,6 @@ namespace ProceduralSceneGenerator
         private void CreateBuildings()
         {
             var createBuilding = new CreateBuilding();
-
-            // buildings.Add(createBuilding.GenerateBuilding(4, 3, 3, 2, 0, 3, 1));
-            //  buildings.Add(createBuilding.GenerateBuilding(4, 3, 20, 2, 3, 2, 0));
-            //   buildings.Add(createBuilding.GenerateBuilding(4, 3, 10, 4, 1, 2, 0));
-            // buildings.Add(createBuilding.GenerateBuilding(4, 3, 7, 0, 3, 4, 0));
-            //   buildings.Add(createBuilding.GenerateBuilding(4, 3, 15, 2, 1, 2, 1));
-
             //Creating random buildings            
             cityTiles.Add(createBuilding.GenerateRandomBuilding(4, 3, 5));
             cityTiles.Add(createBuilding.GenerateRandomBuilding(4, 3, 3));
@@ -458,5 +481,6 @@ namespace ProceduralSceneGenerator
             EditorApplication.isPlaying = false;
 #endif
         }
+
     }
 }
