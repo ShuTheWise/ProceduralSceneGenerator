@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using UnityEditor;
+using System.IO;
 
 namespace ProceduralSceneGenerator
 {
@@ -438,6 +439,8 @@ namespace ProceduralSceneGenerator
             GameObject.Find("NavMeshPlane").transform.parent = renderer;
 
             scenePrefab = renderer.gameObject;
+            SaveScenePrefab();
+
             /*
             string rendererPrefabName = "ScenePrefab" + renderer.GetInstanceID();
             PrefabUtility.CreatePrefab("Assets/Resources/" + rendererPrefabName + ".prefab", renderer.gameObject);
@@ -456,6 +459,38 @@ namespace ProceduralSceneGenerator
             cityTiles.Add(createBuilding.GenerateRandomBuilding(4, 3, 10));
             cityTiles.Add(createBuilding.GenerateRandomBuilding(4, 3, 15));
         }
+        void OnApplicationQuit()
+        {
+            // Debug.Log("Application ending after " + Time.time + " seconds");
+            //PrefabUtility.InstantiatePrefab(scenePrefab);
+        }
+        private void SaveScenePrefab()
+        {            
+            int sceneId = GetGighestScenePrefabIndex() + 1;
+            PrefabUtility.CreatePrefab(string.Format("Assets/Scenes/ScenePrefab#{0}.prefab", sceneId), scenePrefab);
+            EditorApplication.isPlaying = false;
+        }
+
+        private int GetGighestScenePrefabIndex()
+        {
+            string path = string.Format("{0}//{1}", Application.dataPath, "Scenes");
+            string[] scenePrefabs = Directory.GetFiles(path, "*.prefab");
+            int highestIndex = 0;
+            foreach (var scene in scenePrefabs)
+            {
+                string fileName = Path.GetFileNameWithoutExtension(scene);
+                int index = 0;
+                int.TryParse(fileName.Split('#')[1], out index);
+
+                if (index > highestIndex)
+                {
+                    highestIndex = index;
+                }
+            }
+
+            return highestIndex;
+        }
+
         private void SaveScene(GameObject gameObj)
         {
             AssetDatabase.CreateAsset(gameObj, "Assets/Resources/");
