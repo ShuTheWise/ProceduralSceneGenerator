@@ -7,7 +7,7 @@ namespace ProceduralSceneGenerator
 {
     public class BuildScene : MonoBehaviour
     {
-
+        public GameObject ground;
         private List<GameObject> cityTiles;
         public GameObject xStreets;
         public GameObject zStreets;
@@ -18,34 +18,41 @@ namespace ProceduralSceneGenerator
         private BuildingTemplateMaterials btm;
         private GameObject scenePrefab;
 
+        private float lookAtHeightSquare;
+        private float lookAtHeightCrossRoad;
+
         public int mapSize = 10;
         private int citySquareSize = 4;
         private int mapWidth;
         private int mapHeight;
-        float buildingFootprint = 4.15F;
+        float buildingFootprint = 4.15f;
         float[,] mapgrid;
 
         void SetCitySquareSize()
         {
+
             if (mapSize < 4)
             {
                 throw new System.Exception("Scene too small");
             }
-            else if (mapSize < 4)
-            {
-                citySquareSize = 2;
-            }
             else if (mapSize < 8)
             {
                 citySquareSize = 2;
+                lookAtHeightSquare = 0.7f;
+                lookAtHeightCrossRoad = 1f;
             }
+
             else if (mapSize < 12)
             {
                 citySquareSize = 4;
+                lookAtHeightSquare = 0.15f;
+                lookAtHeightCrossRoad = 5f;
             }
             else if (mapSize < 21)
             {
                 citySquareSize = 6;
+                lookAtHeightSquare = 0f;
+                lookAtHeightCrossRoad = 6f;
             }
             else throw new System.Exception("Scene too big");
         }
@@ -66,6 +73,15 @@ namespace ProceduralSceneGenerator
         }
         void Start()
         {
+
+            GameObject navMeshPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            navMeshPlane.transform.localScale = (Vector3.one * mapSize) + Vector3.one * (buildingFootprint / 2 + 0.375f);
+            navMeshPlane.transform.position = Vector3.up * 0.15f;
+            navMeshPlane.GetComponent<MeshRenderer>().materials = new Material[0]; 
+            navMeshPlane.isStatic = true;
+            navMeshPlane.name = "NavMeshPlane";
+            navMeshPlane.tag = "navi";
+
             if (GameObject.Find("Renderer") == null)
             {
                 GameObject rendPar = new GameObject("Renderer");
@@ -74,7 +90,9 @@ namespace ProceduralSceneGenerator
                 new GameObject("Miscellaneous Renderer");
                 new GameObject("Green Areas Renderer");
                 new GameObject("Cameras Renderer");
+                Instantiate(ground, ground.transform.position, Quaternion.identity);
             }
+
             btm = GetComponent<BuildingTemplateMaterials>();
             cityTiles = new List<GameObject>();
             mapHeight = mapSize;
@@ -304,7 +322,7 @@ namespace ProceduralSceneGenerator
                         cam.GetComponent<SphereCollider>().radius = 0.3f;
                         cam.GetComponent<Camera>().fieldOfView = 30;
                         cam.transform.position = pos + cameraOffset[k];
-                        cam.transform.LookAt(renderer.position);
+                        cam.transform.LookAt(renderer.position - Vector3.up * lookAtHeightCrossRoad);
                         cam.transform.parent = camRend;
 
                         GameObject.Find("LookAt").GetComponent<CamerasController>()._cameras.Add(cam);
@@ -338,14 +356,14 @@ namespace ProceduralSceneGenerator
                             //
                             if (result < (i * (10.0f / cityTiles.Count)))
                             {
-                                Instantiate(cityTiles[i - 1], pos, Quaternion.identity, tileParent);
+                                Instantiate(cityTiles[i - 1], pos, randomQuat(), tileParent);
                                 break;
                             }
                             else if (result > 10)
                             {
                                 if (result < (10 + (i * (10.0f / cityTiles.Count))))
                                 {
-                                    Instantiate(cityTiles[i - 1], pos, Quaternion.Euler(0, 90f, 0), tileParent);
+                                    Instantiate(cityTiles[i - 1], pos, randomQuat(), tileParent);
                                     break;
                                 }
                             }
@@ -404,19 +422,21 @@ namespace ProceduralSceneGenerator
                 cam.AddComponent<SphereCollider>();
                 cam.GetComponent<SphereCollider>().radius = 0.3f;
                 cam.GetComponent<Camera>().fieldOfView = 30;
-                //Instantiate(cam, new Vector3(vec.w, camheight, vec.h), Quaternion.identity);
                 cam.transform.position = new Vector3((float)vec.w * buildingFootprint, camheight, (float)vec.h * buildingFootprint);
-                cam.transform.LookAt(renderer);
+                cam.transform.LookAt(renderer.position + lookAtHeightSquare * Vector3.up);
                 cam.transform.parent = camRend;
-
                 GameObject.Find("LookAt").GetComponent<CamerasController>()._cameras.Add(cam);
 
             }
+
             foreach (Transform child in renderer)
             {
                 child.localScale = Vector3.one * 3;
             }
-            renderer.position = Vector3.zero;
+            GameObject.Find("Ground(Clone)").transform.position = Vector3.zero;
+            renderer.position = Vector3.up * 0.15f;
+            GameObject.Find("Ground(Clone)").transform.parent = renderer;
+            GameObject.Find("NavMeshPlane").transform.parent = renderer;
 
             scenePrefab = renderer.gameObject;
             SaveScenePrefab();
@@ -481,6 +501,19 @@ namespace ProceduralSceneGenerator
             EditorApplication.isPlaying = false;
 #endif
         }
+        private static Quaternion randomQuat()
+        {
+            List<Vector3> rots = new List<Vector3>();
+            rots.Add(Vector3.up * 90);
+            rots.Add(Vector3.up * -90);
+            rots.Add(Vector3.up * 180);
+            rots.Add(Vector3.zero);
+
+            int indx = Random.Range(0, rots.Count);
+
+            return Quaternion.Euler(rots[indx]);
+        }
+
 
     }
 }
