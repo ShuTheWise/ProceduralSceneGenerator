@@ -7,7 +7,8 @@ namespace ProceduralSceneGenerator
 {
     public class BuildScene : MonoBehaviour
     {
-        public GameObject ground;
+        public GameObject groundPrefab;
+        private GameObject ground;
         private List<GameObject> cityTiles;
         public GameObject xStreets;
         public GameObject zStreets;
@@ -73,25 +74,23 @@ namespace ProceduralSceneGenerator
         }
         void Start()
         {
+            Transform renderer = new GameObject("Renderer").transform;
 
-            GameObject navMeshPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            navMeshPlane.transform.localScale = (Vector3.one * mapSize) + Vector3.one * (buildingFootprint / 2 + 0.375f);
-            navMeshPlane.transform.position = Vector3.up * 0.15f;
-            navMeshPlane.GetComponent<MeshRenderer>().materials = new Material[0]; 
-            navMeshPlane.isStatic = true;
-            navMeshPlane.name = "NavMeshPlane";
-            navMeshPlane.tag = "navi";
+            Transform buildingsRend = new GameObject("Buildings Renderer").transform;
+            buildingsRend.parent = renderer;
 
-            if (GameObject.Find("Renderer") == null)
-            {
-                GameObject rendPar = new GameObject("Renderer");
-                new GameObject("Buildings Renderer");
-                new GameObject("Streets Renderer");
-                new GameObject("Miscellaneous Renderer");
-                new GameObject("Green Areas Renderer");
-                new GameObject("Cameras Renderer");
-                Instantiate(ground, ground.transform.position, Quaternion.identity);
-            }
+            Transform streetsRend = new GameObject("Streets Renderer").transform;
+            streetsRend.parent = renderer;
+
+            Transform miscRend = new GameObject("Miscellaneous Renderer").transform;
+            miscRend.parent = renderer;
+            Transform greenAreasRend = new GameObject("Green Areas Renderer").transform;
+            greenAreasRend.parent = renderer;
+
+            Transform camRend = new GameObject("Cameras Renderer").transform;
+            camRend.parent = renderer;
+
+            ground = (GameObject)Instantiate(groundPrefab, groundPrefab.transform.position, Quaternion.identity, renderer);
 
             btm = GetComponent<BuildingTemplateMaterials>();
             cityTiles = new List<GameObject>();
@@ -179,19 +178,9 @@ namespace ProceduralSceneGenerator
 
             //buildings
             CreateBuildings();
-            Transform renderer = GameObject.Find("Renderer").transform;
-            Transform buildingsRend = GameObject.Find("Buildings Renderer").transform;
-            buildingsRend.parent = renderer;
-            Transform streetsRend = GameObject.Find("Streets Renderer").transform;
-            streetsRend.parent = renderer;
-            Transform miscRend = GameObject.Find("Miscellaneous Renderer").transform;
-            miscRend.parent = renderer;
-            Transform greenAreasRend = GameObject.Find("Green Areas Renderer").transform;
-            greenAreasRend.parent = renderer;
-            Transform camRend = GameObject.Find("Cameras Renderer").transform;
-            camRend.parent = renderer;
 
-            float posy = -citySquareTile.transform.lossyScale.y / 2;
+
+            
             float move = -(mapSize / 2 * buildingFootprint) + buildingFootprint / 2;
             renderer.position = new Vector3(-move, +citySquareTile.transform.lossyScale.y / 2, -move);
 
@@ -426,25 +415,48 @@ namespace ProceduralSceneGenerator
                 cam.transform.LookAt(renderer.position + lookAtHeightSquare * Vector3.up);
                 cam.transform.parent = camRend;
                 GameObject.Find("LookAt").GetComponent<CamerasController>()._cameras.Add(cam);
-
             }
+
 
             foreach (Transform child in renderer)
             {
-                child.localScale = Vector3.one * 3;
+                if (child.tag != "Ground")
+                {
+                    child.localScale = Vector3.one * 3;
+                }
             }
-            GameObject.Find("Ground(Clone)").transform.position = Vector3.zero;
-            renderer.position = Vector3.up * 0.15f;
-            GameObject.Find("Ground(Clone)").transform.parent = renderer;
-            GameObject.Find("NavMeshPlane").transform.parent = renderer;
 
+            renderer.position = Vector3.up * 0.15f;
+
+            GameObject navMeshPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            navMeshPlane.transform.localScale = new Vector3(buildingFootprint / 10 * mapSize * 3, 0, buildingFootprint / 10 * mapSize * 3);
+            navMeshPlane.GetComponent<MeshRenderer>().materials = new Material[0];
+            navMeshPlane.name = "NavMeshPlane";
+
+            navMeshPlane.transform.parent = renderer;
+            if (mapSize % 2 == 1)
+            {
+                navMeshPlane.transform.localPosition = 3 * new Vector3((buildingFootprint / 2), 0, buildingFootprint / 2);
+                
+            }
+            else
+            {
+                navMeshPlane.transform.localPosition = (Vector3.zero);
+            }
+           // navMeshPlane.transform.position = new Vector3(navMeshPlane.transform.position.x, 0f, navMeshPlane.transform.position.z);
+            
+            ground.transform.parent = renderer;
+            navMeshPlane.isStatic = true;
             scenePrefab = renderer.gameObject;
+
+            foreach (Transform building in buildingsRend)
+            {
+                building.GetChild(0).GetComponent<NavMeshObstacle>().enabled = true;
+            }
+
             SaveScenePrefab();
 
-            /*
-            string rendererPrefabName = "ScenePrefab" + renderer.GetInstanceID();
-            PrefabUtility.CreatePrefab("Assets/Resources/" + rendererPrefabName + ".prefab", renderer.gameObject);
-            Quit();*/
+
         }
         /// <summary>
         /// Funkcja wykorzystująca klasę *CreateBuilding* do generacji prefabów
@@ -459,16 +471,11 @@ namespace ProceduralSceneGenerator
             cityTiles.Add(createBuilding.GenerateRandomBuilding(4, 3, 10));
             cityTiles.Add(createBuilding.GenerateRandomBuilding(4, 3, 15));
         }
-        void OnApplicationQuit()
-        {
-            // Debug.Log("Application ending after " + Time.time + " seconds");
-            //PrefabUtility.InstantiatePrefab(scenePrefab);
-        }
         private void SaveScenePrefab()
-        {            
+        {
             int sceneId = GetGighestScenePrefabIndex() + 1;
             PrefabUtility.CreatePrefab(string.Format("Assets/Scenes/ScenePrefab#{0}.prefab", sceneId), scenePrefab);
-            EditorApplication.isPlaying = false;
+            //EditorApplication.isPlaying = false;
         }
 
         private int GetGighestScenePrefabIndex()
@@ -489,11 +496,6 @@ namespace ProceduralSceneGenerator
             }
 
             return highestIndex;
-        }
-
-        private void SaveScene(GameObject gameObj)
-        {
-            AssetDatabase.CreateAsset(gameObj, "Assets/Resources/");
         }
         public static void Quit()
         {

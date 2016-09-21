@@ -58,12 +58,11 @@ public class GeneratorOverseer : EditorWindow
         GameObject prefabInstance =  Instantiate(scenePrefab, Vector3.zero, Quaternion.identity) as GameObject;
        
         string sceneName = string.Format("Assets/Scenes/Scene#{0}.unity", index);
-        EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), sceneName, true);
-        
+        EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), sceneName, true);        
         EditorSceneManager.OpenScene(sceneName);        
         NavMeshBuilder.BuildNavMesh();       
         DestroyImmediate(prefabInstance);
-        EditorSceneManager.OpenScene("Assets/_Scenes/main.unity");
+       // EditorSceneManager.OpenScene("Assets/_Scenes/main.unity");
     }
 
     private int GetGighestScenePrefabIndex()
