@@ -85,6 +85,46 @@ public class GeneratorOverseer : EditorWindow
         return highestIndex;
     }
 
+    private void CreateScenePreview(GameObject g, string assetPath)
+    {
+        GameObject previewCamera = new GameObject();
+        Camera camera = previewCamera.AddComponent<Camera>();
+        camera.clearFlags = CameraClearFlags.Color;
+        camera.backgroundColor = Color.white;
+        camera.farClipPlane = 1000.0f;
+        Vector3 cameraOffset = new Vector3(0.0f, 50.0f, 50.0f);
+        previewCamera.transform.position = g.transform.position + cameraOffset;
+        previewCamera.transform.LookAt(g.transform.position + new Vector3(0.0f, 1.0f, 0.0f));
+
+        int resWidth = 400;
+        int resHeight = 400;
+
+        RenderTexture rt = new RenderTexture(resWidth, resHeight, 24);
+        camera.targetTexture = rt;
+
+        Texture2D screenshot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
+        RenderTexture.active = camera.targetTexture;
+        camera.Render();
+
+        screenshot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
+        screenshot.Apply();
+
+        string dir = Path.GetDirectoryName(assetPath);
+        string filename = string.Format("{0}.png", Path.GetFileNameWithoutExtension(assetPath));
+
+        byte[] bytes = screenshot.EncodeToPNG();
+        string path = string.Format("{0}/{1}", dir, filename);
+        File.WriteAllBytes(path, bytes);
+
+        camera.targetTexture = null;
+        RenderTexture.active = null;
+
+        GameObject.DestroyImmediate(screenshot);
+        GameObject.DestroyImmediate(rt);
+        GameObject.DestroyImmediate(previewCamera);
+        GameObject.DestroyImmediate(g);
+    }
+
     //void CloaseAfterGeneration()
     //{
     //    if (_generated && EditorApplication.isPlaying == false)
